@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+pragma experimental ABIEncoderV2;
 
 contract Unibond is Ownable, IERC721Receiver {
     using SafeMath for uint256;
@@ -14,7 +15,7 @@ contract Unibond is Ownable, IERC721Receiver {
     struct SwapCollection {
         uint256 swapId; // swap id
         uint256 tokenId; // UniV3 NFT id
-        address creator; // address of swap creator
+        address payable creator; // address of swap creator
         address payToken; // address of pay token
         uint256 amount; // token/ETH amount,
         uint8 assetType; // 0 : erc20 token, 1 : ETH
@@ -32,7 +33,7 @@ contract Unibond is Ownable, IERC721Receiver {
     event SwapCreated(
         uint256 swapId,
         uint256 tokenId,
-        address payable creator,
+        address creator,
         address payToken,
         uint256 amount,
         uint8 assetType
@@ -160,6 +161,14 @@ contract Unibond is Ownable, IERC721Receiver {
         );
         _list.isOpen = false;
         emit SwapClosed(_swapId);
+    }
+
+    function viewSwap(uint256 _swapId)
+        public
+        view
+        returns (SwapCollection memory)
+    {
+        return swapList[_swapId];
     }
 
     function _incrementListId() internal {
