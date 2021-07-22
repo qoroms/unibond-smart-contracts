@@ -27,8 +27,10 @@ contract Unibond is Ownable, IERC721Receiver {
 
     uint256 public listIndex;
     mapping(uint256 => SwapCollection) public swapList; // SwapList Stae
+    mapping(address => bool) public supportTokens;
 
     bool public emergencyStop;
+    address payable public feeCollector;
 
     event SwapCreated(
         uint256 swapId,
@@ -57,6 +59,7 @@ contract Unibond is Ownable, IERC721Receiver {
     constructor() public {
         listIndex = 0;
         emergencyStop = false;
+        feeCollector = msg.sender;
     }
 
     // @dev enable swap
@@ -64,11 +67,26 @@ contract Unibond is Ownable, IERC721Receiver {
         emergencyStop = false;
     }
 
+    // @dev enable swap
+    function addBatchSupportTokens(address[] calldata _tokens)
+        external
+        onlyOwner
+    {
+        for (uint16 i = 0; i < _tokens.length; i++)
+            supportTokens[_tokens[i]] = true;
+    }
+
     // @dev disable swap
     function stopEmergency() external onlyOwner {
         emergencyStop = true;
     }
 
+    // @dev update fee wallet address
+    function updateFeeWallet(address payable _feeCollector) external onlyOwner {
+        feeCollector = _feeCollector;
+    }
+
+    // @dev create a swap
     function createSwap(
         uint256 _tokenId,
         address _payToken,
@@ -83,6 +101,10 @@ contract Unibond is Ownable, IERC721Receiver {
         require(
             _posManager.isApprovedForAll(msg.sender, address(this)) == true,
             "Unibond: Asset is not approved for create"
+        );
+        require(
+            supportTokens[_payToken] == true,
+            "Unibond: this token is not supported"
         );
 
         _posManager.safeTransferFrom(msg.sender, address(this), _tokenId, "");
@@ -108,6 +130,7 @@ contract Unibond is Ownable, IERC721Receiver {
         );
     }
 
+    // @dev accept swap with erc20 token
     function swapWithToken(uint256 _swapId) external onlyNotEmergency {
         IERC721 _posManager = IERC721(UNIV3_NFT_POISTION_MANAGER);
         SwapCollection storage _list = swapList[_swapId];
@@ -116,11 +139,18 @@ contract Unibond is Ownable, IERC721Receiver {
             IERC20(_list.payToken).balanceOf(msg.sender) >= _list.amount,
             "Unibond: Not enough balance"
         );
+        require(
+            supportTokens[_list.payToken] == true,
+            "Unibond: this token is not supported"
+        );
+        uint256 fee = _list.amount.mul(175).div(10000);
+        uint256 amount = _list.amount.sub(fee);
         IERC20(_list.payToken).safeTransferFrom(
             msg.sender,
             _list.creator,
-            _list.amount
+            amount
         );
+        IERC20(_list.payToken).safeTransferFrom(msg.sender, feeCollector, fee);
         _posManager.safeTransferFrom(
             address(this),
             msg.sender,
@@ -132,12 +162,16 @@ contract Unibond is Ownable, IERC721Receiver {
         emit SwapCompleted(_swapId);
     }
 
+    // @dev accept swap with ETH
     function swapWithETH(uint256 _swapId) external payable onlyNotEmergency {
         IERC721 _posManager = IERC721(UNIV3_NFT_POISTION_MANAGER);
         SwapCollection storage _list = swapList[_swapId];
         require(_list.assetType == 1, "Unibond: You should swap with token");
         require(msg.value >= _list.amount, "Unibond: Not enough balance");
-        _list.creator.transfer(msg.value);
+        uint256 fee = msg.value.mul(175).div(10000);
+        uint256 amount = msg.value.sub(fee);
+        _list.creator.transfer(amount);
+        feeCollector.transfer(fee);
         _posManager.safeTransferFrom(
             address(this),
             msg.sender,
@@ -149,6 +183,7 @@ contract Unibond is Ownable, IERC721Receiver {
         emit SwapCompleted(_swapId);
     }
 
+    // @dev close opend swap
     function closeSwap(uint256 _swapId) external onlyListOwner(_swapId) {
         IERC721 _posManager = IERC721(UNIV3_NFT_POISTION_MANAGER);
         SwapCollection storage _list = swapList[_swapId];
