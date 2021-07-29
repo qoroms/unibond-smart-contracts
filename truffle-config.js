@@ -19,12 +19,12 @@ module.exports = {
   //    port: 7545,
   //    network_id: "*"
   //  }
-    bscProd: {
+    rinkeby: {
       provider: () => new HDWalletProvider(
-        process.env.BSCPROD_PK,
-        process.env.BSCPROD_PROVIDER
+        process.env.RINKEBY_PK,
+        process.env.RINKEBY_PROVIDER
       ),
-      network_id: process.env.BSCPROD_NETWORKID,
+      network_id: 4,
       gas: 7000000
     },
   },

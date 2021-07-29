@@ -1,5 +1,5 @@
-//const Migrations = artifacts.require("Migrations");
+const Unibond = artifacts.require("Unibond");
 
 module.exports = function(deployer) {
-//  deployer.deploy(Migrations);
+  deployer.deploy(Unibond);
 };

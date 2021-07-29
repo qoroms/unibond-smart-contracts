@@ -67,13 +67,22 @@ contract Unibond is Ownable, IERC721Receiver {
         emergencyStop = false;
     }
 
-    // @dev enable swap
+    // @dev add support tokens
     function addBatchSupportTokens(address[] calldata _tokens)
         external
         onlyOwner
     {
         for (uint16 i = 0; i < _tokens.length; i++)
             supportTokens[_tokens[i]] = true;
+    }
+
+    // @dev remove tokens from list
+    function removeBatchSupportTokens(address[] calldata _tokens)
+        external
+        onlyOwner
+    {
+        for (uint16 i = 0; i < _tokens.length; i++)
+            supportTokens[_tokens[i]] = false;
     }
 
     // @dev disable swap

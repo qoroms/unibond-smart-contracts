@@ -8,7 +8,7 @@
         "test": "truffle test",
         "verify:kovan": "sh verify.sh",
         "deploy:kovan": "npx truffle migrate --network kovan",
-        "deploy:rinkeby": "npx truffle migrate --network rinkeby",
+        "deploy:rinkeby": "npx truffle migrate --network rinkeby --skipDryRun",
         "convert": "npx sol-merger './contracts/*.sol' './public'"
     },
     "directories": {
