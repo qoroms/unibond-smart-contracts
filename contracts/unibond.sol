@@ -48,14 +48,6 @@ contract Unibond is Ownable, IERC721Receiver {
         _;
     }
 
-    modifier onlyListOwner(uint256 _swapId) {
-        require(
-            swapList[_swapId].creator == msg.sender,
-            "Unibond: not your list"
-        );
-        _;
-    }
-
     constructor() public {
         listIndex = 0;
         emergencyStop = false;
@@ -193,10 +185,11 @@ contract Unibond is Ownable, IERC721Receiver {
     }
 
     // @dev close opend swap
-    function closeSwap(uint256 _swapId) external onlyListOwner(_swapId) {
+    function closeSwap(uint256 _swapId) external {
         IERC721 _posManager = IERC721(UNIV3_NFT_POISTION_MANAGER);
         SwapCollection storage _list = swapList[_swapId];
         require(_list.isOpen == true, "Unibond: swap is already closed");
+        require(_list.creator == msg.sender, "Unibond: not your list");
         _posManager.safeTransferFrom(
             address(this),
             _list.creator,
